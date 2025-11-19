@@ -129,6 +129,7 @@ if ($ADMIN->fulltree) {
         'Manrope' => 'Manrope',
         'Sora' => 'Sora',
         'Epilogue' => 'Epilogue',
+        'Vazirmatn' => 'Vazirmatn',
     ];
 
     $name = 'theme_moove/fontsite';
