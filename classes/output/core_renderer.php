@@ -186,7 +186,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
             return $logo;
         }
 
-        return false;
+        return $this->get_logo();
     }
 
     /**
