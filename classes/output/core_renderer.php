@@ -113,20 +113,20 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $additionalclasses[] = $fonttype;
         }
 
-        $blackorlightmode = 'light';
+        $colormode = 'light';
 
         $settings = new settings();
         $darkmode = get_user_preferences('dark-mode-on', '');
         if ($settings->enabledarkmode && $darkmode) {
             $additionalclasses[] = 'moove-darkmode';
-            $blackorlightmode = 'dark';
+            $colormode = 'dark';
         }
 
         if (!is_array($additionalclasses)) {
             $additionalclasses = explode(' ', $additionalclasses);
         }
 
-        return ' id="' . $this->body_id() . '" class="'.$this->body_css_classes($additionalclasses) . '" data-bs-theme="' . $blackorlightmode . '"';
+        return " id='{$this->body_id()}' class='{$this->body_css_classes($additionalclasses)}' data-bs-theme='{$colormode}' ";
     }
 
     /**
@@ -330,8 +330,10 @@ class core_renderer extends \theme_boost\output\core_renderer {
     public function activity_navigation() {
         // First we should check if we want to add navigation.
         $context = $this->page->context;
-        if (($this->page->pagelayout !== 'incourse' && $this->page->pagelayout !== 'frametop')
-            || $context->contextlevel != CONTEXT_MODULE) {
+        if (
+            ($this->page->pagelayout !== 'incourse' && $this->page->pagelayout !== 'frametop') ||
+            $context->contextlevel != CONTEXT_MODULE
+        ) {
             return '';
         }
 
@@ -341,7 +343,6 @@ class core_renderer extends \theme_boost\output\core_renderer {
         }
 
         $course = $this->page->cm->get_course();
-        $courseformat = course_get_format($course);
 
         // Get a list of all the activities in the course.
         $modules = get_fast_modinfo($course->id)->get_cms();
@@ -400,6 +401,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
         $activitynav = new activity_navigation($prevmod, $nextmod, $activitylist);
         $renderer = $this->page->get_renderer('core', 'course');
+
         return $renderer->render($activitynav);
     }
 
@@ -483,12 +485,12 @@ class core_renderer extends \theme_boost\output\core_renderer {
     ) {
         $url = str_replace('&amp;', '&', $encodedurl);
 
-        switch ($this->page->state) {
+        switch($this->page->state) {
             case \moodle_page::STATE_BEFORE_HEADER :
                 // No output yet it is safe to delivery the full arsenal of redirect methods.
                 if (!$debugdisableredirect) {
                     // Don't use exactly the same time here, it can cause problems when both redirects fire at the same time.
-                    $this->metarefreshtag = '<meta http-equiv="refresh" content="' . $delay . '; url=' . $encodedurl . '" />' . "\n";
+                    $this->metarefreshtag = '<meta http-equiv="refresh" content="' . $delay . '; url=' . $encodedurl . '" />';
                     $this->page->requires->js_function_call('document.location.replace', [$url], false, ($delay + 3));
                 }
                 $output = $this->header();

@@ -24,8 +24,6 @@
 
 namespace theme_moove\api;
 
-defined('MOODLE_INTERNAL') || die;
-
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
@@ -51,8 +49,6 @@ class darkmode extends external_api {
     /**
      * Darkmode endpoint implementation
      *
-     * @param array $action
-     *
      * @return array
      *
      * @throws \coding_exception
@@ -75,7 +71,7 @@ class darkmode extends external_api {
      */
     public static function toggledarkmode_returns() {
         return new external_single_structure([
-            'status' => new external_value(PARAM_RAW, 'The status message')
+            'status' => new external_value(PARAM_RAW, 'The status message'),
         ]);
     }
 }

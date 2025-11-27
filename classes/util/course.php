@@ -64,7 +64,10 @@ class course {
             if ($file->is_valid_image()) {
                 $url = moodle_url::make_file_url(
                     "$CFG->wwwroot/pluginfile.php",
-                    '/' . $file->get_contextid() . '/' . $file->get_component() . '/' . $file->get_filearea() . $file->get_filepath() . $file->get_filename(),
+                    (
+                        '/' . $file->get_contextid() . '/' . $file->get_component() . '/' .
+                        $file->get_filearea() . $file->get_filepath() . $file->get_filename()
+                    ),
                     !$file->is_valid_image()
                 );
 

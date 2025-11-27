@@ -144,8 +144,13 @@ class extras {
                 ($iscurrentuser || is_siteadmin($USER) || !is_siteadmin($user)) &&
                 has_capability('moodle/user:update', $systemcontext)
             ) {
-                return new moodle_url('/user/editadvanced.php',
-                    ['id' => $user->id, 'course' => $courseid, 'returnto' => 'profile']
+                return new moodle_url(
+                    '/user/editadvanced.php',
+                    [
+                        'id' => $user->id,
+                        'course' => $courseid,
+                        'returnto' => 'profile',
+                    ]
                 );
             }
 
