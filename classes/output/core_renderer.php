@@ -29,6 +29,7 @@ use core\context\course as context_course;
 use moodle_url;
 use html_writer;
 use theme_moove\output\core_course\activity_navigation;
+use theme_moove\util\settings;
 
 /**
  * Renderers to align Moodle's HTML with that expected by Bootstrap
@@ -112,11 +113,20 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $additionalclasses[] = $fonttype;
         }
 
+        $colormode = 'light';
+
+        $settings = new settings();
+        $darkmode = get_user_preferences('dark-mode-on', '');
+        if ($settings->enabledarkmode && $darkmode) {
+            $additionalclasses[] = 'moove-darkmode';
+            $colormode = 'dark';
+        }
+
         if (!is_array($additionalclasses)) {
             $additionalclasses = explode(' ', $additionalclasses);
         }
 
-        return ' id="'. $this->body_id().'" class="'.$this->body_css_classes($additionalclasses).'"';
+        return " id='{$this->body_id()}' class='{$this->body_css_classes($additionalclasses)}' data-bs-theme='{$colormode}' ";
     }
 
     /**
@@ -169,10 +179,36 @@ class core_renderer extends \theme_boost\output\core_renderer {
      *
      * @return string
      */
+    public function get_logo_dark() {
+        $logo = $this->get_theme_logo_dark_url();
+
+        if ($logo) {
+            return $logo;
+        }
+
+        return $this->get_logo();
+    }
+
+    /**
+     * Get the main logo URL.
+     *
+     * @return string
+     */
     public function get_theme_logo_url() {
         $theme = theme_config::load('moove');
 
         return $theme->setting_file_url('logo', 'logo');
+    }
+
+    /**
+     * Get the main dark logo URL.
+     *
+     * @return string
+     */
+    public function get_theme_logo_dark_url() {
+        $theme = theme_config::load('moove');
+
+        return $theme->setting_file_url('logodark', 'logodark');
     }
 
     /**
@@ -188,8 +224,11 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
         $context->errorformatted = $this->error_text($context->error);
         $context->logourl = $this->get_logo();
-        $context->sitename = format_string($SITE->fullname, true,
-            ['context' => context_course::instance(SITEID), "escape" => false]);
+        $context->sitename = format_string(
+            $SITE->fullname,
+            true,
+            ['context' => context_course::instance(SITEID), "escape" => false]
+        );
 
         if (!$CFG->auth_instructions) {
             $context->instructions = null;
@@ -228,9 +267,11 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
         // Do not provide a link to contact site support if it is unavailable to this user. This would be where the site has
         // disabled support, or limited it to authenticated users and the current user is a guest or not logged in.
-        if (!isset($CFG->supportavailability) ||
+        if (
+            !isset($CFG->supportavailability) ||
             $CFG->supportavailability == CONTACT_SUPPORT_DISABLED ||
-            ($CFG->supportavailability == CONTACT_SUPPORT_AUTHENTICATED && (!isloggedin() || isguestuser()))) {
+            ($CFG->supportavailability == CONTACT_SUPPORT_AUTHENTICATED && (!isloggedin() || isguestuser()))
+        ) {
             return '';
         }
 
@@ -289,8 +330,10 @@ class core_renderer extends \theme_boost\output\core_renderer {
     public function activity_navigation() {
         // First we should check if we want to add navigation.
         $context = $this->page->context;
-        if (($this->page->pagelayout !== 'incourse' && $this->page->pagelayout !== 'frametop')
-            || $context->contextlevel != CONTEXT_MODULE) {
+        if (
+            ($this->page->pagelayout !== 'incourse' && $this->page->pagelayout !== 'frametop') ||
+            $context->contextlevel != CONTEXT_MODULE
+        ) {
             return '';
         }
 
@@ -300,7 +343,6 @@ class core_renderer extends \theme_boost\output\core_renderer {
         }
 
         $course = $this->page->cm->get_course();
-        $courseformat = course_get_format($course);
 
         // Get a list of all the activities in the course.
         $modules = get_fast_modinfo($course->id)->get_cms();
@@ -359,6 +401,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
         $activitynav = new activity_navigation($prevmod, $nextmod, $activitylist);
         $renderer = $this->page->get_renderer('core', 'course');
+
         return $renderer->render($activitynav);
     }
 
@@ -433,25 +476,30 @@ class core_renderer extends \theme_boost\output\core_renderer {
      * @return string The HTML to display to the user before dying, may contain
      *         meta refresh, javascript refresh, and may have set header redirects
      */
-    public function redirect_message($encodedurl, $message, $delay, $debugdisableredirect,
-                                     $messagetype = \core\output\notification::NOTIFY_INFO) {
+    public function redirect_message(
+        $encodedurl,
+        $message,
+        $delay,
+        $debugdisableredirect,
+        $messagetype = \core\output\notification::NOTIFY_INFO
+    ) {
         $url = str_replace('&amp;', '&', $encodedurl);
 
-        switch ($this->page->state) {
+        switch($this->page->state) {
             case \moodle_page::STATE_BEFORE_HEADER :
                 // No output yet it is safe to delivery the full arsenal of redirect methods.
                 if (!$debugdisableredirect) {
                     // Don't use exactly the same time here, it can cause problems when both redirects fire at the same time.
-                    $this->metarefreshtag = '<meta http-equiv="refresh" content="'. $delay .'; url='. $encodedurl .'" />'."\n";
+                    $this->metarefreshtag = '<meta http-equiv="refresh" content="' . $delay . '; url=' . $encodedurl . '" />';
                     $this->page->requires->js_function_call('document.location.replace', [$url], false, ($delay + 3));
                 }
                 $output = $this->header();
                 break;
-            case \moodle_page::STATE_PRINTING_HEADER :
+            case \moodle_page::STATE_PRINTING_HEADER:
                 // We should hopefully never get here.
                 throw new \coding_exception('You cannot redirect while printing the page header');
                 break;
-            case \moodle_page::STATE_IN_BODY :
+            case \moodle_page::STATE_IN_BODY:
                 // We really shouldn't be here but we can deal with this.
                 debugging("You should really redirect before you start page output");
                 if (!$debugdisableredirect) {
@@ -459,7 +507,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
                 }
                 $output = $this->opencontainers->pop_all_but_last();
                 break;
-            case \moodle_page::STATE_DONE :
+            case \moodle_page::STATE_DONE:
                 // Too late to be calling redirect now.
                 throw new \coding_exception('You cannot redirect after the entire page has been generated');
                 break;
@@ -470,7 +518,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
         $output .= $this->render_from_template('theme_moove/loading-overlay', ['encodedurl' => $encodedurl]);
 
         if ($debugdisableredirect) {
-            $output .= '<p><strong>'.get_string('erroroutput', 'error').'</strong></p>';
+            $output .= '<p><strong>' . get_string('erroroutput', 'error') . '</strong></p>';
         }
 
         $output .= $this->footer();
@@ -486,5 +534,37 @@ class core_renderer extends \theme_boost\output\core_renderer {
     public function navbar(): string {
         $newnav = new \theme_moove\output\boostnavbar($this->page);
         return $this->render_from_template('core/navbar', $newnav);
+    }
+
+    /**
+     * Render my learning controls
+     *
+     * @return string My learning controls html content.
+     */
+    public function render_mylearning_controls() {
+        if (!isloggedin() || isguestuser()) {
+            return '';
+        }
+
+        return $this->render_from_template('theme_moove/moove/mylearning', []);
+    }
+
+    /**
+     * Render darkmode controls
+     *
+     * @return string Dark mode controls html content.
+     */
+    public function render_darkmode_controls() {
+        if (!isloggedin() || isguestuser()) {
+            return '';
+        }
+
+        $settings = new settings();
+
+        if (!$settings->enabledarkmode) {
+            return '';
+        }
+
+        return $this->render_from_template('theme_moove/moove/darkmode', []);
     }
 }
