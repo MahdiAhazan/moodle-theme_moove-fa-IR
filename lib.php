@@ -71,18 +71,30 @@ function theme_moove_get_extra_scss($theme) {
     $content = '';
 
     // Sets the login background image.
-    $loginbgimgurl = $theme->setting_file_url('loginbgimg', 'loginbgimg');
-
-    if (empty($loginbgimgurl)) {
-        return '';
+    $loginbackgroundimageurl = $theme->setting_file_url('loginbgimg', 'loginbgimg');
+    $backgroundposition = '';
+    $isdefaultloginimage = empty($loginbackgroundimageurl);
+    if ($isdefaultloginimage) {
+        // Use the default login background image.
+        $loginbackgroundimageurl = $theme->image_url(
+            'login_background',
+            'theme',
+        );
+        // Set the default background position to center.
+        $backgroundposition = 'background-position: center;';
     }
-
-    $content .= 'body.pagelayout-login #page { ';
-    $content .= "background-color: initial; background-image: url('$loginbgimgurl'); background-size: cover;";
+    $content .= 'body.pagelayout-login #page .login-layout-left { ';
+    $content .= "background-image: url('$loginbackgroundimageurl'); ";
+    $content .= "background-size: cover; {$backgroundposition}";
     $content .= ' }';
 
+    // Remove the watermark to indicate the image is AI-generated when not the default Moodle image.
+    if (!$isdefaultloginimage) {
+        $content .= 'body.pagelayout-login #page .login-layout-left::after { display: none !important; }';
+    }
+
     // Always return the background image with the scss when we have it.
-    return !empty($theme->settings->scss) ? $theme->settings->scss . ' ' . $content : $content;
+    return !empty($theme->settings->scss) ? "{$theme->settings->scss}  \n  {$content}" : $content;
 }
 
 /**
